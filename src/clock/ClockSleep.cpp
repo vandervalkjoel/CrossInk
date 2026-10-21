@@ -12,7 +12,7 @@
 namespace deskclock {
 
 namespace {
-constexpr int MAX_WAKE_PINS = 4;
+constexpr int MAX_WAKE_PINS = 6;
 
 struct WakePin {
   char name;
@@ -27,8 +27,12 @@ int collectWakePins(WakePin (&pins)[MAX_WAKE_PINS]) {
     if (pin < 0 || count >= MAX_WAKE_PINS) return;
     pins[count++] = WakePin{name, static_cast<gpio_num_t>(pin), wakeLevel};
   };
+  // Buttons are active-low with internal pull-ups. The X4 Pro's two side keys
+  // are declared as up (GPIO0) and down (GPIO7), not left/right.
   add('L', input.left, LOW);
   add('R', input.right, LOW);
+  add('U', input.up, LOW);
+  add('D', input.down, LOW);
   add('P', input.power, input.powerActiveHigh ? HIGH : LOW);
   // The touch interrupt's idle level depends on the controller's loaded
   // config, so wake on the opposite of whatever it reads right now.
@@ -67,6 +71,11 @@ WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize) {
 
   esp_sleep_enable_timer_wakeup(static_cast<uint64_t>(ms) * 1000ULL);
   for (int i = 0; i < count; ++i) {
+    // By default light sleep switches each pin to its sleep configuration,
+    // which drops the internal pull-ups these buttons and the touch line rely
+    // on; a floating pin then reads as pressed and wakes the chip at once.
+    // Keep the awake configuration for the wake pins.
+    gpio_sleep_sel_dis(pins[i].pin);
     gpio_wakeup_enable(pins[i].pin, pins[i].wakeLevel == HIGH ? GPIO_INTR_HIGH_LEVEL : GPIO_INTR_LOW_LEVEL);
   }
   esp_sleep_enable_gpio_wakeup();

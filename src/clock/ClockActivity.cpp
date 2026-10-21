@@ -91,8 +91,13 @@ void ClockActivity::loop() {
 
   int x = 0;
   int y = 0;
-  if (mappedInput.wasPressed(MappedInputManager::Button::Left)) return exitClock("left");
-  if (mappedInput.wasPressed(MappedInputManager::Button::Right)) return exitClock("right");
+  // The X4 Pro's two side keys arrive as Up/Down (page back/forward) rather
+  // than Left/Right, so accept any of them.
+  using Button = MappedInputManager::Button;
+  for (const Button button : {Button::Left, Button::Right, Button::Up, Button::Down, Button::PageBack,
+                              Button::PageForward}) {
+    if (mappedInput.wasPressed(button)) return exitClock("button");
+  }
   if (mappedInput.wasScreenTapped(x, y)) return exitClock("tap");
 
   ClockTime t{};
