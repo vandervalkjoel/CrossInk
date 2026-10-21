@@ -15,6 +15,10 @@
 #include "clock/ClockSleep.h"
 #include "fontIds.h"
 
+#if __has_include("ClockDebugLocal.h")
+#include "ClockDebugLocal.h"  // local, untracked development switches
+#endif
+
 using namespace deskclock;
 
 namespace {
@@ -70,6 +74,7 @@ void ClockActivity::onEnter() {
   lastHalfMinutes = 0;
   lastDrawnKey = -1;
   exiting = false;
+  sweepDone = false;
   debugLog("open face=%d orientation=%d heap=%u", static_cast<int>(face), static_cast<int>(orientation),
            static_cast<unsigned>(ESP.getFreeHeap()));
 }
@@ -113,9 +118,24 @@ void ClockActivity::loop() {
     lastDrawnKey = key;
   }
 
+#ifdef DESK_CLOCK_WAKE_SWEEP
+  // Diagnostic: once per open, sleep 3 s with each wake pin armed alone, then
+  // with the timer alone, and log which ones end the sleep early.
+  if (!sweepDone) {
+    sweepDone = true;
+    char sweepPins[96];
+    for (int i = -2; i < wakePinCount(); ++i) {
+      if (i == -1) continue;
+      const unsigned long started = millis();
+      const WakeCause sweepCause = lightSleepFor(3000, sweepPins, sizeof(sweepPins), i);
+      debugLog("sweep arm=%d cause=%s slept=%lu pins=%s", i, causeName(sweepCause), millis() - started, sweepPins);
+    }
+  }
+#endif
+
   const uint32_t sleepMs =
       valid ? static_cast<uint32_t>(secondsUntilNextRedraw(t, face)) * 1000 + WAKE_MARGIN_MS : NOT_SET_RETRY_MS;
-  char pins[64];
+  char pins[96];
   const WakeCause cause = lightSleepFor(sleepMs, pins, sizeof(pins));
   debugLog("wake %s planned=%lu pins=%s", causeName(cause), static_cast<unsigned long>(sleepMs), pins);
 

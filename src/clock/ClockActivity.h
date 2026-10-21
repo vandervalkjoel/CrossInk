@@ -35,4 +35,5 @@ class ClockActivity final : public Activity {
 
   int lastDrawnKey = -1;
   bool exiting = false;
+  bool sweepDone = false;  // DESK_CLOCK_WAKE_SWEEP diagnostic only
 };

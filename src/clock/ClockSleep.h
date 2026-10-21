@@ -16,6 +16,11 @@ enum class WakeCause {
 // interrupt line. Every wake pin is restored before returning. note receives
 // one token per wake pin, "<name><gpio>:<level before>/<level after>", for the
 // debug log.
-WakeCause lightSleepFor(uint32_t ms, char* note, size_t noteSize);
+// onlyPin >= 0 arms just that one wake pin (by index in the wake pin list)
+// plus the timer; -2 arms the timer alone. For diagnosing spurious wakes.
+WakeCause lightSleepFor(uint32_t ms, char* note, size_t noteSize, int onlyPin = -1);
+
+// Number of wake pins on this board (for the diagnostic sweep).
+int wakePinCount();
 
 }  // namespace deskclock

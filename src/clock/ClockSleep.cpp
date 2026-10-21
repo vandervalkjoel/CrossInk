@@ -55,9 +55,20 @@ void describe(const WakePin (&pins)[MAX_WAKE_PINS], const int count, const int (
 }
 }  // namespace
 
-WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize) {
+int wakePinCount() {
   WakePin pins[MAX_WAKE_PINS];
-  const int count = collectWakePins(pins);
+  return collectWakePins(pins);
+}
+
+WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, const int onlyPin) {
+  WakePin pins[MAX_WAKE_PINS];
+  int count = collectWakePins(pins);
+  if (onlyPin == -2) {
+    count = 0;
+  } else if (onlyPin >= 0 && onlyPin < count) {
+    pins[0] = pins[onlyPin];
+    count = 1;
+  }
   int before[MAX_WAKE_PINS] = {};
   bool busy = false;
   for (int i = 0; i < count; ++i) {
@@ -78,7 +89,7 @@ WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize) {
     gpio_sleep_sel_dis(pins[i].pin);
     gpio_wakeup_enable(pins[i].pin, pins[i].wakeLevel == HIGH ? GPIO_INTR_HIGH_LEVEL : GPIO_INTR_LOW_LEVEL);
   }
-  esp_sleep_enable_gpio_wakeup();
+  if (count > 0) esp_sleep_enable_gpio_wakeup();
 
   esp_light_sleep_start();
   const esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
@@ -102,7 +113,9 @@ WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize) {
 #include <Arduino.h>
 
 namespace deskclock {
-WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize) {
+int wakePinCount() { return 0; }
+
+WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, int) {
   delay(ms);
   if (note != nullptr && noteSize > 0) note[0] = '\0';
   return WakeCause::Timer;
