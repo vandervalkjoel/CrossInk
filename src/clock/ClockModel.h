@@ -5,7 +5,9 @@
 
 #include <cstdint>
 #include <ctime>
+#include <functional>
 #include <string>
+#include <vector>
 
 namespace deskclock {
 
@@ -36,6 +38,12 @@ WordsTime wordsForTime(int hour, int minute);
 
 // 0..287; changes exactly when wordsForTime's result changes.
 int wordsBucket(int hour, int minute);
+
+// Greedy line breaking for the words face: breaks at spaces, and after a
+// hyphen when a word alone is wider than maxWidth. A word that still does not
+// fit stays whole on its own line.
+std::vector<std::string> wrapWords(const std::string& text, int maxWidth,
+                                   const std::function<int(const std::string&)>& measure);
 
 // Whole seconds until the face next needs drawing (1..300).
 int secondsUntilNextRedraw(const ClockTime& t, ClockFace face);

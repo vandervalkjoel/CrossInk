@@ -71,6 +71,53 @@ WordsTime wordsForTime(const int hour, const int minute) {
   return {PHRASES[step], HOUR_WORDS[named % 12]};
 }
 
+std::vector<std::string> wrapWords(const std::string& text, const int maxWidth,
+                                   const std::function<int(const std::string&)>& measure) {
+  // Split into words, then split any too-wide word after its hyphens.
+  std::vector<std::string> tokens;
+  size_t start = 0;
+  while (start < text.size()) {
+    size_t end = text.find(' ', start);
+    if (end == std::string::npos) end = text.size();
+    const std::string word = text.substr(start, end - start);
+    if (!word.empty()) {
+      if (measure(word) > maxWidth && word.find('-') != std::string::npos) {
+        size_t partStart = 0;
+        size_t hyphen;
+        while ((hyphen = word.find('-', partStart)) != std::string::npos) {
+          tokens.push_back(word.substr(partStart, hyphen + 1 - partStart));
+          partStart = hyphen + 1;
+        }
+        if (partStart < word.size()) tokens.push_back(word.substr(partStart));
+      } else {
+        tokens.push_back(word);
+      }
+    }
+    start = end + 1;
+  }
+
+  std::vector<std::string> lines;
+  std::string line;
+  bool lineEndsWithHyphen = false;
+  for (const std::string& token : tokens) {
+    if (line.empty()) {
+      line = token;
+    } else {
+      // A piece split off after a hyphen joins without a space.
+      const std::string candidate = line + (lineEndsWithHyphen ? "" : " ") + token;
+      if (measure(candidate) <= maxWidth) {
+        line = candidate;
+      } else {
+        lines.push_back(line);
+        line = token;
+      }
+    }
+    lineEndsWithHyphen = !line.empty() && line.back() == '-';
+  }
+  if (!line.empty()) lines.push_back(line);
+  return lines;
+}
+
 int wordsBucket(const int hour, const int minute) { return ((hour * 60 + minute + 2) / 5) % WORDS_BUCKETS; }
 
 int secondsUntilNextRedraw(const ClockTime& t, const ClockFace face) {

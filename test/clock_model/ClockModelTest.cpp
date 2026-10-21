@@ -139,4 +139,35 @@ TEST(ClockLocal, PreviousYear) { expectLocal(localFromUtc({2027, 1, 1, 2, 0, 0},
 
 TEST(ClockLocal, Utc) { expectLocal(localFromUtc({2026, 10, 21, 17, 42, 5}, 48), 2026, 10, 21, 3, 17, 42, 5); }
 
+namespace {
+// One pixel per character stands in for a font.
+int charWidth(const std::string& s) { return static_cast<int>(s.size()); }
+}  // namespace
+
+TEST(ClockWrap, FitsOnOneLine) {
+  const auto lines = wrapWords("quarter past", 20, charWidth);
+  ASSERT_EQ(lines.size(), 1u);
+  EXPECT_EQ(lines[0], "quarter past");
+}
+
+TEST(ClockWrap, BreaksAtSpaces) {
+  const auto lines = wrapWords("twenty-five past", 12, charWidth);
+  ASSERT_EQ(lines.size(), 2u);
+  EXPECT_EQ(lines[0], "twenty-five");
+  EXPECT_EQ(lines[1], "past");
+}
+
+TEST(ClockWrap, BreaksAfterHyphenWhenAWordIsTooWide) {
+  const auto lines = wrapWords("twenty-five to", 8, charWidth);
+  ASSERT_EQ(lines.size(), 2u);
+  EXPECT_EQ(lines[0], "twenty-");
+  EXPECT_EQ(lines[1], "five to");
+}
+
+TEST(ClockWrap, AWordWiderThanTheLineStaysWhole) {
+  const auto lines = wrapWords("eleven", 3, charWidth);
+  ASSERT_EQ(lines.size(), 1u);
+  EXPECT_EQ(lines[0], "eleven");
+}
+
 TEST(ClockLocal, NextYear) { expectLocal(localFromUtc({2026, 12, 31, 21, 0, 0}, 68), 2027, 1, 1, 5, 2, 0, 0); }

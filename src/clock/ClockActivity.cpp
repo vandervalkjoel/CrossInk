@@ -12,6 +12,8 @@
 #include "CrossPointSettings.h"
 #include "MappedInputManager.h"
 #include "clock/ClockDebugLog.h"
+#include "clock/ClockFaces.h"
+#include "clock/ClockFonts.h"
 #include "clock/ClockSleep.h"
 #include "fontIds.h"
 
@@ -67,6 +69,7 @@ void ClockActivity::onEnter() {
                     : ClockOrientation::Landscape;
   fullRefreshInterval = fullRefreshMinutes(SETTINGS.clockFullRefresh);
   use12h = SETTINGS.clockFormat == 1;
+  ensureFontsLoaded(renderer);
   previousOrientation = renderer.getOrientation();
   renderer.setOrientation(orientation == ClockOrientation::Portrait ? GfxRenderer::Orientation::Portrait
                                                                     : GfxRenderer::Orientation::LandscapeClockwise);
@@ -154,16 +157,10 @@ void ClockActivity::render(RenderLock&&) {
   if (!timeValid) {
     renderer.drawCenteredText(UI_12_FONT_ID, midY, tr(STR_CLOCK_TIME_NOT_SET));
   } else {
-    const std::string time = formatTime(shown.hour, shown.minute, use12h);
-    const std::string date = formatDateLong(shown);
-    renderer.drawCenteredText(UI_12_FONT_ID, midY - 20, time.c_str(), true, EpdFontFamily::BOLD);
-    renderer.drawCenteredText(UI_12_FONT_ID, midY + 20, date.c_str());
+    const int battery = static_cast<int>(powerManager.getBatteryPercentage());
+    const FaceContext ctx{shown, use12h, batteryState(battery) != BatteryState::Normal, battery};
+    drawFace(renderer, face, orientation, ctx);
   }
-
-  // Debug aid for the battery measurement; removed when the faces land.
-  char battery[16];
-  snprintf(battery, sizeof(battery), "%u%%", static_cast<unsigned>(powerManager.getBatteryPercentage()));
-  renderer.drawText(UI_10_FONT_ID, 10, renderer.getScreenHeight() - 30, battery);
 
   const int nowMinutes = shown.hour * 60 + shown.minute;
   const int minutesSinceHalf = (nowMinutes - lastHalfMinutes + 24 * 60) % (24 * 60);
