@@ -2,6 +2,7 @@
 
 #include <GfxRenderer.h>
 #include <HalClock.h>
+#include <HalGPIO.h>
 #include <HalPowerManager.h>
 #include <I18n.h>
 #include <Logging.h>
@@ -10,6 +11,7 @@
 #include <string>
 
 #include "CrossPointSettings.h"
+#include "GlobalActions.h"
 #include "MappedInputManager.h"
 #include "clock/ClockDebugLog.h"
 #include "clock/ClockFaces.h"
@@ -107,6 +109,17 @@ void ClockActivity::loop() {
     if (mappedInput.wasPressed(button)) return exitClock("button");
   }
   if (mappedInput.wasScreenTapped(x, y)) return exitClock("tap");
+
+  // A nearly empty battery: go through CrossInk's normal deep sleep (stats
+  // backup, state save, safe SD shutdown, the user's sleep screen) rather than
+  // keep waking and risk the screen freezing on a stale time.
+  const int battery = static_cast<int>(powerManager.getBatteryPercentage());
+  if (batteryState(battery) == BatteryState::Critical && !gpio.isUsbConnected()) {
+    debugLog("battery %d%%: deep sleep", battery);
+    exiting = true;
+    enterDeepSleep();
+    return;
+  }
 
   ClockTime t{};
   const bool valid = readLocalTime(t);
