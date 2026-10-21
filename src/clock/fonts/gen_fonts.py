@@ -22,7 +22,8 @@ CONVERT = REPO / "lib" / "EpdFont" / "scripts" / "fontconvert.py"
 BUILTIN = REPO / "lib" / "EpdFont" / "builtinFonts" / "source"
 
 DIGITS = ["--additional-intervals", "0x20,0x20", "--additional-intervals", "0x30,0x3A"]
-CAPS = ["--additional-intervals", "0x20,0x20", "--additional-intervals", "0x41,0x5A"]
+CAPS = ["--additional-intervals", "0x20,0x20", "--additional-intervals", "0x30,0x39",  # day numbers
+        "--additional-intervals", "0x41,0x5A"]
 WORDS = ["--additional-intervals", "0x20,0x20", "--additional-intervals", "0x27,0x27",
          "--additional-intervals", "0x2D,0x2D", "--additional-intervals", "0x61,0x7A"]
 ASCII = ["--additional-intervals", "0x20,0x7E"]
