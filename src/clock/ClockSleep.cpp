@@ -34,10 +34,10 @@ int collectWakePins(WakePin (&pins)[MAX_WAKE_PINS]) {
   add('U', input.up, LOW);
   add('D', input.down, LOW);
   add('P', input.power, input.powerActiveHigh ? HIGH : LOW);
-  // The touch interrupt's idle level depends on the controller's loaded
-  // config, so wake on the opposite of whatever it reads right now.
-  const int8_t irq = BoardConfig::ACTIVE.touch.irq;
-  if (irq >= 0) add('T', irq, digitalRead(irq) == HIGH ? LOW : HIGH);
+  // No touch wake: on the X4 Pro the GT911 pulses its interrupt line every
+  // few milliseconds with nobody touching it (a wake-pin sweep on hardware
+  // woke after 6 to 38 ms, three runs of three), so arming it means the chip
+  // never sleeps. Leaving the clock is by side key or Power instead.
   return count;
 }
 
