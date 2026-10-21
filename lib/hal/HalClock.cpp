@@ -172,6 +172,22 @@ bool HalClock::getDate(uint16_t& year, uint8_t& month, uint8_t& day, uint8_t& ho
   return true;
 }
 
+bool HalClock::getDateTimeNow(uint16_t& year, uint8_t& month, uint8_t& day, uint8_t& hour, uint8_t& minute,
+                              uint8_t& second) const {
+  if (!_available) return false;
+
+  Rtc::DateTime dt;
+  if (!_sdkRtc.now(dt)) return false;
+  if (!isValidDate(dt.year, dt.month, dt.day)) return false;
+  year = dt.year;
+  month = dt.month;
+  day = dt.day;
+  hour = dt.hour;
+  minute = dt.minute;
+  second = dt.second;
+  return true;
+}
+
 bool HalClock::formatDate(char* buf, size_t bufSize, uint8_t utcOffsetQuarterHoursBiased, const DateFormat dateFormat,
                           const char numericSeparator) const {
   if (bufSize < 13u) return false;

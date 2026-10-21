@@ -57,6 +57,12 @@ class HalClock {
     return getDate(year, month, day, hour, minute);
   }
 
+  // Like getDateTime(), but always reads the RTC (no 10 s cache), includes seconds,
+  // and returns false when the read fails or the date is invalid instead of
+  // falling back to a stale value. Raw UTC, before any offset.
+  bool getDateTimeNow(uint16_t& year, uint8_t& month, uint8_t& day, uint8_t& hour, uint8_t& minute,
+                      uint8_t& second) const;
+
   // Format date into a caller-provided buffer using the requested display format.
   // utcOffsetQuarterHoursBiased matches formatTime so the date rolls over at local midnight.
   // Returns false if RTC is not available or the RTC date is invalid.
