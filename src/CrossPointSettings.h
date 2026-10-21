@@ -488,6 +488,11 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // Set once an NTP sync writes both date and time. Kept separate so older
   // time-only syncs do not unlock date display with stale RTC date registers.
   uint8_t clockDateHasBeenSynced = 0;
+  // Desk clock (src/clock): deskclock::ClockFace, deskclock::ClockOrientation,
+  // and the full-refresh interval index (0 = 10, 1 = 15, 2 = 30 minutes).
+  uint8_t clockFace = 0;
+  uint8_t clockOrientation = 0;
+  uint8_t clockFullRefresh = 1;
   // Text rendering settings
   uint8_t extraParagraphSpacing = 1;
   uint8_t forceParagraphIndents = 0;

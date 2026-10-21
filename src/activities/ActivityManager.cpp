@@ -24,6 +24,7 @@
 #include "boot_sleep/BootActivity.h"
 #include "boot_sleep/SleepActivity.h"
 #include "browser/OpdsBookBrowserActivity.h"
+#include "clock/ClockActivity.h"
 #include "components/TouchRegistry.h"
 #include "home/AlertActivity.h"
 #include "home/CrashActivity.h"
@@ -854,6 +855,8 @@ void ActivityManager::goToFileTransfer(std::string returnBookPath) {
   replaceActivity(std::make_unique<CrossPointWebServerActivity>(renderer, mappedInput, std::move(returnBookPath)));
 }
 
+void ActivityManager::goToClock() { replaceActivity(std::make_unique<ClockActivity>(renderer, mappedInput)); }
+
 bool ActivityManager::goToNearbyBookSend(std::string path, const bool returnToReader) {
   auto activity = makeUniqueNoThrow<NearbyBookTransferActivity>(
       renderer, mappedInput, NearbyBookTransferActivity::Mode::Send, std::move(path), returnToReader);
@@ -1067,6 +1070,8 @@ void ActivityManager::goHome(HomeMenuItem initialMenuItem, const HalDisplay::Ref
       initialMenuItem = HomeMenuItem::LIBRARY;
     } else if (activityName == "OpdsBookBrowser") {
       initialMenuItem = HomeMenuItem::OPDS_BROWSER;
+    } else if (activityName == "Clock") {
+      initialMenuItem = HomeMenuItem::CLOCK;
     } else if (activityName == "CrossPointWebServer") {
       initialMenuItem = HomeMenuItem::FILE_TRANSFER;
     } else if (activityName == "NearbyStatsSync") {

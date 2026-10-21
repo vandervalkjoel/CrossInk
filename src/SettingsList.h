@@ -586,7 +586,7 @@ inline SettingInfo buildSideButtonActionSetting(const StrId nameId, uint8_t Cros
 // can use it directly; mutable device UI lists use getSettingsList(), which
 // returns an owned copy and can add SD-card font and dictionary options.
 // Four edge gesture entries are compiled only for touch devices.
-inline constexpr size_t BASE_SETTINGS_CAPACITY = 104 + (CROSSINK_APP_CAP_TOUCH ? 4 : 0);
+inline constexpr size_t BASE_SETTINGS_CAPACITY = 107 + (CROSSINK_APP_CAP_TOUCH ? 4 : 0);  // +3 desk clock
 
 const std::vector<SettingInfo>& getBaseSettingsList();
 
@@ -1054,7 +1054,7 @@ inline std::vector<SettingInfo> buildSystemSettingsParentList(const std::vector<
 
 inline std::vector<SettingInfo> buildSystemDeviceSettingsList(const std::vector<SettingInfo>& allSettings) {
   std::vector<SettingInfo> settings;
-  settings.reserve(10);
+  settings.reserve(13);
   addSettingByName(settings, allSettings, StrId::STR_DEVICE_NAME);
   addSettingByName(settings, allSettings, StrId::STR_TIME_TO_SLEEP);
   addSettingByName(settings, allSettings, StrId::STR_CUSTOM_BOOTSCREEN);
@@ -1066,6 +1066,9 @@ inline std::vector<SettingInfo> buildSystemDeviceSettingsList(const std::vector<
     addSettingByName(settings, allSettings, StrId::STR_DATE_FORMAT);
     addSettingByName(settings, allSettings, StrId::STR_DATE_SEPARATOR);
     settings.push_back(SettingInfo::Action(StrId::STR_CLOCK_SYNC_NOW, SettingAction::ClockSync));
+    addSettingByName(settings, allSettings, StrId::STR_CLOCK_FACE);
+    addSettingByName(settings, allSettings, StrId::STR_CLOCK_ORIENTATION);
+    addSettingByName(settings, allSettings, StrId::STR_CLOCK_FULL_REFRESH);
   }
   return settings;
 }

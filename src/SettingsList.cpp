@@ -373,6 +373,17 @@ const std::vector<SettingInfo>& getBaseSettingsList() {
         StrId::STR_DATE_SEPARATOR, &CrossPointSettings::dateSeparator,
         {StrId::STR_DATE_SEPARATOR_PERIOD, StrId::STR_DATE_SEPARATOR_HYPHEN, StrId::STR_DATE_SEPARATOR_SLASH},
         "dateSeparator", StrId::STR_CAT_SYSTEM));
+    // Desk clock (shown under System > Device).
+    add(SettingInfo::Enum(StrId::STR_CLOCK_FACE, &CrossPointSettings::clockFace,
+                          {StrId::STR_CLOCK_FACE_BIG_TIME, StrId::STR_CLOCK_FACE_QUIET_DIAL,
+                           StrId::STR_CLOCK_FACE_WORDS, StrId::STR_CLOCK_FACE_DAY_LINE},
+                          "clockFace", StrId::STR_CAT_SYSTEM));
+    add(SettingInfo::Enum(StrId::STR_CLOCK_ORIENTATION, &CrossPointSettings::clockOrientation,
+                          {StrId::STR_CLOCK_LANDSCAPE, StrId::STR_PORTRAIT}, "clockOrientation",
+                          StrId::STR_CAT_SYSTEM));
+    add(SettingInfo::Enum(StrId::STR_CLOCK_FULL_REFRESH, &CrossPointSettings::clockFullRefresh,
+                          {StrId::STR_CLOCK_REFRESH_10, StrId::STR_CLOCK_REFRESH_15, StrId::STR_CLOCK_REFRESH_30},
+                          "clockFullRefresh", StrId::STR_CAT_SYSTEM));
     // Persistence flag for NTP debounce. Resetting from the web UI forces a re-sync
     // on next WiFi connect, which is useful when crossing time zones.
     add(SettingInfo::Toggle(StrId::STR_CLOCK_SYNCED, &CrossPointSettings::clockHasBeenSynced, "clockHasBeenSynced",
