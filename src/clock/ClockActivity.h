@@ -4,8 +4,10 @@
 #include "clock/ClockModel.h"
 
 // Desk clock: shows the time and date, redraws once a minute and light-sleeps
-// in between. A tap, Left or Right returns to the home screen. Never uses
-// Wi-Fi: time comes from the RTC, which CrossInk keeps in sync elsewhere.
+// in between. A side key returns to the home screen; Power keeps its normal
+// meaning. A tap only registers in the moments the chip is awake, because the
+// touch line cannot be a wake source (see ClockSleep.cpp). Never uses Wi-Fi:
+// time comes from the RTC, which CrossInk keeps in sync elsewhere.
 class ClockActivity final : public Activity {
  public:
   ClockActivity(GfxRenderer& renderer, MappedInputManager& mappedInput) : Activity("Clock", renderer, mappedInput) {}
@@ -36,4 +38,5 @@ class ClockActivity final : public Activity {
   int lastDrawnKey = -1;
   bool exiting = false;
   bool sweepDone = false;  // DESK_CLOCK_WAKE_SWEEP diagnostic only
+  bool rtcRetried = false;
 };

@@ -139,6 +139,24 @@ TEST(ClockLocal, PreviousYear) { expectLocal(localFromUtc({2027, 1, 1, 2, 0, 0},
 
 TEST(ClockLocal, Utc) { expectLocal(localFromUtc({2026, 10, 21, 17, 42, 5}, 48), 2026, 10, 21, 3, 17, 42, 5); }
 
+TEST(ClockRedraw, WordsFaceStopsAtMidnight) {
+  // 23:58 and 00:00 to 00:02 share a words bucket; the date still changes.
+  EXPECT_EQ(secondsUntilNextRedraw({2026, 10, 21, 3, 23, 58, 0}, ClockFace::Words), 120);
+}
+
+TEST(ClockRedraw, KeyChangesWithTheDate) {
+  const ClockTime before{2026, 10, 21, 3, 23, 58, 0};
+  const ClockTime after{2026, 10, 22, 4, 0, 0, 0};
+  EXPECT_NE(redrawKey(before, ClockFace::Words), redrawKey(after, ClockFace::Words));
+  EXPECT_NE(redrawKey(before, ClockFace::BigTime), redrawKey(after, ClockFace::BigTime));
+  EXPECT_EQ(redrawKey({2026, 10, 21, 3, 10, 42, 0}, ClockFace::Words),
+            redrawKey({2026, 10, 21, 3, 10, 38, 0}, ClockFace::Words));
+}
+
+TEST(ClockLocal, LeapDay) {
+  expectLocal(localFromUtc({2028, 3, 1, 3, 0, 0}, 20), 2028, 2, 29, 2, 20, 0, 0);
+}
+
 namespace {
 // One pixel per character stands in for a font.
 int charWidth(const std::string& s) { return static_cast<int>(s.size()); }

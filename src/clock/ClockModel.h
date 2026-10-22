@@ -45,6 +45,10 @@ int wordsBucket(int hour, int minute);
 std::vector<std::string> wrapWords(const std::string& text, int maxWidth,
                                    const std::function<int(const std::string&)>& measure);
 
+// Changes exactly when the face's drawing changes: the minute (or the words
+// bucket for the words face) and the date.
+int redrawKey(const ClockTime& t, ClockFace face);
+
 // Whole seconds until the face next needs drawing (1..300).
 int secondsUntilNextRedraw(const ClockTime& t, ClockFace face);
 

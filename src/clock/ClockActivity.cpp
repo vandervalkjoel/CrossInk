@@ -29,6 +29,7 @@ namespace {
 constexpr uint32_t NOT_SET_RETRY_MS = 60 * 1000;
 constexpr uint32_t PIN_BUSY_RETRY_MS = 50;
 constexpr uint32_t WAKE_MARGIN_MS = 500;
+constexpr uint32_t RTC_RETRY_MS = 1000;
 constexpr int KEY_TIME_NOT_SET = -2;
 
 // The RTC keeps UTC; CrossInk's clockUtcOffsetQ turns it into wall time.
@@ -41,12 +42,6 @@ bool readLocalTime(ClockTime& out) {
   if (!halClock.getDateTimeNow(year, month, day, hour, minute, second)) return false;
   out = localFromUtc({year, month, day, hour, minute, second}, SETTINGS.clockUtcOffsetQ);
   return true;
-}
-
-int redrawKey(const bool valid, const ClockTime& t, const ClockFace face) {
-  if (!valid) return KEY_TIME_NOT_SET;
-  if (face == ClockFace::Words) return wordsBucket(t.hour, t.minute);
-  return t.hour * 60 + t.minute;
 }
 
 const char* causeName(const WakeCause cause) {
@@ -80,6 +75,7 @@ void ClockActivity::onEnter() {
   lastDrawnKey = -1;
   exiting = false;
   sweepDone = false;
+  rtcRetried = false;
   debugLog("open face=%d orientation=%d heap=%u", static_cast<int>(face), static_cast<int>(orientation),
            static_cast<unsigned>(ESP.getFreeHeap()));
 }
@@ -123,10 +119,24 @@ void ClockActivity::loop() {
 
   ClockTime t{};
   const bool valid = readLocalTime(t);
-  const int key = redrawKey(valid, t, face);
+  if (!valid && lastDrawnKey >= 0 && !rtcRetried) {
+    // One failed read after a good one: try again shortly before giving up
+    // the face for the "time not set" screen.
+    rtcRetried = true;
+    debugLog("rtc read failed, retrying");
+    delay(RTC_RETRY_MS);
+    return;
+  }
+  if (valid) rtcRetried = false;
+
+  const int key = valid ? redrawKey(t, face) : KEY_TIME_NOT_SET;
   if (key != lastDrawnKey) {
-    timeValid = valid;
-    shown = t;
+    {
+      // render() reads these on the render task; never let it see a half-written time.
+      RenderLock lock;
+      timeValid = valid;
+      shown = t;
+    }
     if (requestUpdateAndWait() == RequestUpdateResult::Rejected) {
       debugLog("render rejected");
       return;  // try again on the next loop
@@ -152,15 +162,28 @@ void ClockActivity::loop() {
   const uint32_t sleepMs =
       valid ? static_cast<uint32_t>(secondsUntilNextRedraw(t, face)) * 1000 + WAKE_MARGIN_MS : NOT_SET_RETRY_MS;
   char pins[96];
-  const WakeCause cause = lightSleepFor(sleepMs, pins, sizeof(pins));
-  debugLog("wake %s planned=%lu pins=%s", causeName(cause), static_cast<unsigned long>(sleepMs), pins);
+  char wokePin = 0;
+  WakeCause cause;
+  {
+    // Light sleep stalls both cores. Holding the render lock waits out any
+    // refresh still running (a deferred redraw the main loop queued, e.g. a
+    // USB or battery change) so the panel never freezes mid-update; a redraw
+    // queued meanwhile runs after the wake.
+    RenderLock lock;
+    cause = lightSleepFor(sleepMs, pins, sizeof(pins), -1, &wokePin);
+  }
+  debugLog("wake %s pin=%c planned=%lu pins=%s", causeName(cause), wokePin ? wokePin : '-',
+           static_cast<unsigned long>(sleepMs), pins);
 
   if (cause == WakeCause::PinBusy) {
-    // A contact is closing now; let the main loop read it before sleeping.
+    // A contact is closing now, or the sleep was refused; let the main loop
+    // read input before trying again.
     delay(PIN_BUSY_RETRY_MS);
     return;
   }
-  if (cause == WakeCause::Input) exitClock("wake input");
+  // Power keeps its normal global meaning (main.cpp handles it before this
+  // loop runs); any other wake input leaves the clock.
+  if (cause == WakeCause::Input && wokePin != 'P') exitClock("wake input");
 }
 
 void ClockActivity::render(RenderLock&&) {

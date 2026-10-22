@@ -1,3 +1,12 @@
+## [v1.6.1-clock2] - 2026-10-22 (desk clock fork, X4 Pro)
+
+### Fixed
+
+- The clock no longer light-sleeps while a screen refresh is still running, which could leave the previous minute on screen while charging.
+- The Words face changes date at midnight instead of at 00:03.
+- Power keeps its normal action on the clock instead of always leaving it; a side key leaves the clock.
+- A single failed clock-chip read is retried before showing "Time not set", and a refused light sleep backs off instead of retrying at once.
+
 ## [v1.6.1-clock1] - 2026-10-22 (desk clock fork, X4 Pro)
 
 ### Added

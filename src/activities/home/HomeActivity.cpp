@@ -901,6 +901,7 @@ void HomeActivity::onEnter() {
       case HomeMenuItem::SETTINGS_MENU:
         selectorIndex = base + (hasOpdsServers ? 4 : 3);
         break;
+      case HomeMenuItem::CLOCK:  // the Cover Grid theme has no Clock tab
       case HomeMenuItem::NONE:
         break;
     }

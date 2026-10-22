@@ -47,3 +47,4 @@ Build with the version set, then publish `firmware-x4-pro.bin` on a GitHub relea
 ## Known issues
 
 - After the clock has light-slept with USB plugged in, the USB serial link can stop answering until the cable is replugged.
+- A tap only registers in the moments the chip is awake (the touch line cannot be a wake source), so in practice a side key is how you leave the clock. Power keeps its normal action.

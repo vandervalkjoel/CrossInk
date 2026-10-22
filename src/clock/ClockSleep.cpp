@@ -60,7 +60,8 @@ int wakePinCount() {
   return collectWakePins(pins);
 }
 
-WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, const int onlyPin) {
+WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, const int onlyPin, char* wokePin) {
+  if (wokePin != nullptr) *wokePin = 0;
   WakePin pins[MAX_WAKE_PINS];
   int count = collectWakePins(pins);
   if (onlyPin == -2) {
@@ -82,17 +83,24 @@ WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, co
 
   esp_sleep_enable_timer_wakeup(static_cast<uint64_t>(ms) * 1000ULL);
   for (int i = 0; i < count; ++i) {
-    // By default light sleep switches each pin to its sleep configuration,
-    // which drops the internal pull-ups these buttons and the touch line rely
-    // on; a floating pin then reads as pressed and wakes the chip at once.
-    // Keep the awake configuration for the wake pins.
+    // Keep each wake pin's awake configuration (its pull-up) through the
+    // sleep. Added while chasing the instant wakes, which turned out to be the
+    // touch line; kept because light sleep is verified on hardware with it.
     gpio_sleep_sel_dis(pins[i].pin);
     gpio_wakeup_enable(pins[i].pin, pins[i].wakeLevel == HIGH ? GPIO_INTR_HIGH_LEVEL : GPIO_INTR_LOW_LEVEL);
   }
   if (count > 0) esp_sleep_enable_gpio_wakeup();
 
-  esp_light_sleep_start();
+  const esp_err_t slept = esp_light_sleep_start();
   const esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+  if (cause == ESP_SLEEP_WAKEUP_GPIO && wokePin != nullptr) {
+    for (int i = 0; i < count; ++i) {
+      if (digitalRead(pins[i].pin) == pins[i].wakeLevel) {
+        *wokePin = pins[i].name;
+        break;
+      }
+    }
+  }
 
   for (int i = 0; i < count; ++i) {
     gpio_wakeup_disable(pins[i].pin);
@@ -103,6 +111,7 @@ WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, co
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
 
   describe(pins, count, before, note, noteSize);
+  if (slept != ESP_OK) return WakeCause::PinBusy;  // refused: back off, do not spin
   return cause == ESP_SLEEP_WAKEUP_GPIO ? WakeCause::Input : WakeCause::Timer;
 }
 
@@ -115,7 +124,8 @@ WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, co
 namespace deskclock {
 int wakePinCount() { return 0; }
 
-WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, int) {
+WakeCause lightSleepFor(const uint32_t ms, char* note, const size_t noteSize, int, char* wokePin) {
+  if (wokePin != nullptr) *wokePin = 0;
   delay(ms);
   if (note != nullptr && noteSize > 0) note[0] = '\0';
   return WakeCause::Timer;

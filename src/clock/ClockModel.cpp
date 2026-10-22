@@ -120,6 +120,11 @@ std::vector<std::string> wrapWords(const std::string& text, const int maxWidth,
 
 int wordsBucket(const int hour, const int minute) { return ((hour * 60 + minute + 2) / 5) % WORDS_BUCKETS; }
 
+int redrawKey(const ClockTime& t, const ClockFace face) {
+  const int timePart = face == ClockFace::Words ? wordsBucket(t.hour, t.minute) : t.hour * 60 + t.minute;
+  return (t.day % 32) * MINUTES_PER_DAY + timePart;
+}
+
 int secondsUntilNextRedraw(const ClockTime& t, const ClockFace face) {
   const int toNextMinute = 60 - t.second;
   if (face != ClockFace::Words) return toNextMinute;
@@ -127,8 +132,9 @@ int secondsUntilNextRedraw(const ClockTime& t, const ClockFace face) {
   const int bucket = wordsBucket(t.hour, t.minute);
   int minutesAhead = 1;
   while (minutesAhead < 5) {
-    const int m = (now + minutesAhead) % MINUTES_PER_DAY;
-    if (wordsBucket(m / 60, m % 60) != bucket) break;
+    const int m = now + minutesAhead;
+    // Midnight changes the date even where the words stay the same.
+    if (m >= MINUTES_PER_DAY || wordsBucket(m / 60, m % 60) != bucket) break;
     ++minutesAhead;
   }
   return toNextMinute + (minutesAhead - 1) * 60;
