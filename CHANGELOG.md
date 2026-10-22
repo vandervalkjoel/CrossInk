@@ -1,3 +1,10 @@
+## [v1.6.1-clock1] - 2026-10-22 (desk clock fork, X4 Pro)
+
+### Added
+
+- Clock on the Home menu: a desk clock showing the time and date, redrawn once a minute with the device light-sleeping in between. Four faces (Big time, Quiet dial, Words, Day line), portrait or landscape, and a full-refresh interval, chosen under Settings > System > Device. A side key or Power leaves it. Time comes from the RTC and the existing clock settings (UTC offset, 12/24 hour); the clock never uses Wi-Fi.
+- "Update online" installs this fork's releases.
+
 ## [v1.6.1] - 2026-10-03
 
 ### Added
